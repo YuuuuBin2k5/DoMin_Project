@@ -10,8 +10,12 @@ Rows_Board, Cols_Board = 15, 15
 cell_w = W_Board // Cols_Board
 cell_h = H_Board // Rows_Board
 #
-image1 = pygame.image.load("G:/Data/AI/Minesweeper/asset/image/milkyway.jpg")
+image1 = pygame.image.load("./asset/image/milkyway.jpg")
 image1 = pygame.transform.scale(image1, (W_Board, H_Board))
+
+space_bg = pygame.image.load("./asset/image/space_hd.png")
+space_bg = pygame.transform.scale(space_bg, (WIDTH, HEIGHT))
+
 
 # Màu sắc
 YELLOW = (246, 255, 0)
