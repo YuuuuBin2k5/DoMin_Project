@@ -86,6 +86,9 @@ flags = set()
 is_lose = False
 is_win = False
 algorithm = "Player"
+# Timer cho hiệu ứng delay
+mine_hit_timer = 0
+show_all_mines = False
 
 
 class GameObject:
@@ -113,6 +116,8 @@ while True:
                 is_lose = False
                 is_win = False
                 blackhole_effect = None
+                mine_hit_timer = 0
+                show_all_mines = False
             #button back
             elif back_rect.collidepoint(event.pos):
                 if board_before is not None and first_click is not None:
@@ -121,6 +126,9 @@ while True:
                     flags = set()
                     is_lose = False
                     is_win = False
+                    blackhole_effect = None
+                    mine_hit_timer = 0
+                    show_all_mines = False
 
                     # mở lại đúng ô đầu tiên
                     r, c = first_click
@@ -143,47 +151,59 @@ while True:
                         if (r, c) not in flags:  # không mở nếu đã đặt cờ
                             result = reveal_cell(r, c, board, revealed, Rows_Board, Cols_Board)
                             if result == "mine":
-                                # Tạo danh sách game objects: ô + sao + hành tinh + phi thuyền
-                                objects = []
-
-                                # --- Ô ---
-                                for r in range(Rows_Board):
-                                    for c in range(Cols_Board):
-                                        x = x_Board + c*cell_w + cell_w//2
-                                        y = y_Board + r*cell_h + cell_h//2
-                                        surf = pygame.Surface((cell_w, cell_h), pygame.SRCALPHA)
-                                        val = board[r][c]
-                                        if val == -1:
-                                            pygame.draw.rect(surf, (50,50,50), (0,0,cell_w,cell_h))
-                                        elif val > 0:
-                                            img = number_images.get(val)
-                                            if img: surf.blit(img, (0,0))
-                                        else:
-                                            pygame.draw.rect(surf, (180,180,180), (0,0,cell_w,cell_h))
-                                        objects.append(GameObject(surf, x, y))
-
-                                # --- Sao ---
-                                for star in stars_far + stars_mid + stars_near:
-                                    surf = pygame.Surface((3,3), pygame.SRCALPHA)
-                                    pygame.draw.circle(surf, (255,255,255), (1,1), 1)
-                                    objects.append(GameObject(surf, star[0], star[1]))
-
-                                # --- Hành tinh ---
-                                for planet in planets:
-                                    objects.append(GameObject(planet[2], planet[0], planet[1]))
-
-                                # --- Phi thuyền ---
-                                spaceship_surf = pygame.image.load("./asset/image/spaceship.png").convert_alpha()
-                                spaceship_surf = pygame.transform.smoothscale(spaceship_surf, (60,60))
-                                objects.append(GameObject(spaceship_surf, WIDTH//2, HEIGHT//2 - 150))
-
-                                # --- Khởi tạo hiệu ứng hố đen ---
-                                blackhole_effect = BlackholeEffect(objects, (WIDTH//2, HEIGHT//2))
+                                # Hiện tất cả mìn trước
+                                reveal_all_mines(board, revealed, Rows_Board, Cols_Board)
+                                is_lose = True
+                                show_all_mines = True
+                                mine_hit_timer = 0  # Bắt đầu đếm timer
 
                     elif event.button == 3:  # chuột phải -> đặt cờ
                         toggle_flag(r, c, flags, revealed)
      # --- Clear màn hình trước ---
     screen.blit(space_bg,(0,0))
+
+    # --- Xử lý timer cho hiệu ứng blackhole ---
+    if show_all_mines and mine_hit_timer >= 0:
+        mine_hit_timer += 1
+        # Sau 120 frame (~2 giây) mới tạo hiệu ứng blackhole
+        if mine_hit_timer >= 120 and blackhole_effect is None:
+            # Tạo danh sách game objects: ô + sao + hành tinh + phi thuyền
+            objects = []
+
+            # --- Ô ---
+            for r in range(Rows_Board):
+                for c in range(Cols_Board):
+                    x = x_Board + c*cell_w + cell_w//2
+                    y = y_Board + r*cell_h + cell_h//2
+                    surf = pygame.Surface((cell_w, cell_h), pygame.SRCALPHA)
+                    val = board[r][c]
+                    if val == -1:
+                        pygame.draw.rect(surf, (50,50,50), (0,0,cell_w,cell_h))
+                    elif val > 0:
+                        img = number_images.get(val)
+                        if img: surf.blit(img, (0,0))
+                    else:
+                        pygame.draw.rect(surf, (180,180,180), (0,0,cell_w,cell_h))
+                    objects.append(GameObject(surf, x, y))
+
+            # --- Sao ---
+            for star in stars_far + stars_mid + stars_near:
+                surf = pygame.Surface((3,3), pygame.SRCALPHA)
+                pygame.draw.circle(surf, (255,255,255), (1,1), 1)
+                objects.append(GameObject(surf, star[0], star[1]))
+
+            # --- Hành tinh ---
+            for planet in planets:
+                objects.append(GameObject(planet[2], planet[0], planet[1]))
+
+            # --- Phi thuyền ---
+            spaceship_surf = pygame.image.load("./asset/image/spaceship.png").convert_alpha()
+            spaceship_surf = pygame.transform.smoothscale(spaceship_surf, (60,60))
+            objects.append(GameObject(spaceship_surf, WIDTH//2, HEIGHT//2 - 150))
+
+            # --- Khởi tạo hiệu ứng hố đen ---
+            blackhole_effect = BlackholeEffect(objects, (WIDTH//2, HEIGHT//2))
+            show_all_mines = False  # Dừng việc hiển thị tất cả mìn
 
     # --- Vẽ background ---
     draw_stars()
